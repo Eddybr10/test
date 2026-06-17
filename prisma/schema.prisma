@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String      @id @default(uuid())
+  email              String      @unique
+  salt               String      // Base64 string para PBKDF2 del lado del cliente
+  masterPasswordHash String      // Hash enviado por el cliente para autenticación
+  vaultItems         VaultItem[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+
+model VaultItem {
+  id                String   @id @default(uuid())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  
+  // Todos los campos de datos sensibles están cifrados (Zero-Knowledge)
+  title             String
+  username          String
+  url               String
+  encryptedPassword String
+  notes             String?
+  iv                String   // Initialization Vector para descifrar
+
+  lastModified      DateTime @default(now()) // Para calcular caducidad (3 meses)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
